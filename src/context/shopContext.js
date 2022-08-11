@@ -10,6 +10,14 @@ const client = Client.buildClient({
 	storefrontAccessToken: process.env.REACT_APP_SHOPIFY_API,
 });
 
+/* ShopProvider component holds the following:
+1. placeholders for things that will need to be changed or updated - this is stored in state
+2. component did mount - hook that checks localstorage for checkoutid everytime the app mounts
+		* if checkoutId is found then getCheckout else create a checkout session
+3. functions for updating the properties within the state object (async because their all fetching from shopify api )
+4. Within the render function - render the StoreProvider and pass in all children that are affected by it
+5. On the StoreProvider pass the state (to display it) and the functions (to update state) into the value attribute on StoreProvider 
+*/
 export class ShopProvider extends Component {
 	state = {
 		product: {},
@@ -28,6 +36,7 @@ export class ShopProvider extends Component {
 		}
 	}
 
+	//
 	createCheckout = async () => {
 		const checkout = await client.checkout.create();
 		localStorage.setItem("checkoutId", checkout.id);
@@ -40,9 +49,25 @@ export class ShopProvider extends Component {
 		});
 	};
 
-	addItemToCheckout = async () => {};
+	addItemToCheckout = async (variantId, quantity) => {
+		const lineItemsToAdd = [
+			{
+				variantId,
+				quantity: parseInt(quantity, 10),
+			},
+		];
 
-	removeLineItem = async (lineItemIdToRemove) => {};
+		const checkout = await client.checkout.addLineItems(this.state.checkout.id, lineItemsToAdd);
+
+		this.setState({ checkout: checkout });
+		this.openCart();
+	};
+
+	removeLineItem = async (lineItemIdsToRemove) => {
+		// Remove an item from the checkout
+		const checkout = await client.checkout.removeLineItems(this.state.checkout.id, lineItemIdsToRemove);
+		this.setState({ checkout: checkout });
+	};
 
 	fetchAllProducts = async () => {
 		const products = await client.product.fetchAll();
@@ -54,9 +79,13 @@ export class ShopProvider extends Component {
 		this.setState({ product: product });
 	};
 
-	closeCart = async () => {};
+	closeCart = async () => {
+		this.setState({ isCartOpen: false });
+	};
 
-	openCart = async () => {};
+	openCart = async () => {
+		this.setState({ isCartOpen: true });
+	};
 
 	closeMenu = async () => {};
 
@@ -75,6 +104,7 @@ export class ShopProvider extends Component {
 					closeMenu: this.closeMenu,
 					openMenu: this.openMenu,
 					addItemToCheckout: this.addItemToCheckout,
+					removeLineItem: this.removeLineItem,
 				}}
 			>
 				{this.props.children}
@@ -83,6 +113,9 @@ export class ShopProvider extends Component {
 	}
 }
 
+// Consuming components are components within a provider
+// We need this because we are using a class component as our provider.
+// You need a consumer component to subscribe to a context within a functional component ( since the provider is a class component )
 const ShopConsumer = ShopContext.Consumer;
 
 export { ShopConsumer, ShopContext };

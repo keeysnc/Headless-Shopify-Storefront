@@ -4,13 +4,16 @@ import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import { ShopProvider } from "./context/shopContext";
+import { BrowserRouter as Router } from "react-router-dom";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
 	<React.StrictMode>
-		<ShopProvider>
-			<App />
-		</ShopProvider>
+		<Router>
+			<ShopProvider>
+				<App />
+			</ShopProvider>
+		</Router>
 	</React.StrictMode>
 );
 
